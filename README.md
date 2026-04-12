@@ -13,7 +13,7 @@ Ensure [you have Go installed](https://go.dev/doc/install), then:
 
 ```bash
 go mod init musicsort
-go get [github.com/dhowden/tag](https://github.com/dhowden/tag)
+go get github.com/dhowden/tag
 go build -o musicsort
 mv musicsort ~/.local/bin/
 ```
