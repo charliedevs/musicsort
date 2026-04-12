@@ -35,6 +35,16 @@ func main() {
 	flag.BoolVar(&dryRun, "n", false, "Dry run")
 	flag.Parse()
 
+	// Resolve absolute paths once to avoid repeated syscalls in workers
+	absSrcDir, err := filepath.Abs(sourceDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+	absTgtDir, err := filepath.Abs(targetDir)
+	if err != nil {
+		log.Fatal(err)
+	}
+
 	if dryRun {
 		fmt.Println("\033[1;33m[DRY RUN] No files will actually be moved.\033[0m")
 	}
@@ -48,18 +58,18 @@ func main() {
 		go func() {
 			defer wg.Done()
 			for path := range filesToProcess {
-				processFile(path)
+				processFile(path, absTgtDir)
 			}
 		}()
 	}
 
 	// Walk source directory to find music files
-	err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
+	err = filepath.WalkDir(absSrcDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
 		}
 		if d.IsDir() {
-			if !recursive && path != sourceDir {
+			if !recursive && path != absSrcDir {
 				return filepath.SkipDir
 			}
 			return nil
@@ -78,8 +88,7 @@ func main() {
 	close(filesToProcess)
 	wg.Wait()
 
-	// Handle cleanup
-	removeEmptyDirs(sourceDir)
+	removeEmptyDirs(absSrcDir)
 
 	fmt.Println("Done!")
 }
@@ -88,7 +97,7 @@ func sanitize(s string) string {
 	return illegalChars.ReplaceAllString(s, "_")
 }
 
-func processFile(path string) {
+func processFile(path, absTgtDir string) {
 	artist, album, title, year, err := readTags(path)
 	if err != nil {
 		log.Printf("Error reading tags for %s: %v", path, err)
@@ -100,9 +109,15 @@ func processFile(path string) {
 	sTitle := sanitize(title)
 	ext := filepath.Ext(path)
 
-	destDir := filepath.Join(targetDir, sArtist, sAlbum)
+	// Construct absolute destination path
+	destDir := filepath.Join(absTgtDir, sArtist, sAlbum)
 	newFilename := fmt.Sprintf("%s - %s%s", sArtist, sTitle, ext)
 	destPath := filepath.Join(destDir, newFilename)
+
+	// Ignore unchanged files
+	if path == destPath {
+		return
+	}
 
 	if dryRun {
 		fmt.Printf("[DRY-RUN] %s -> %s\n", path, destPath)
