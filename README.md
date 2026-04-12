@@ -15,7 +15,7 @@ Ensure [you have Go installed](https://go.dev/doc/install), then:
 go mod init musicsort
 go get github.com/dhowden/tag
 go build -o musicsort
-mv musicsort ~/.local/bin/
+mv musicsort ~/.local/bin/ # or other location in $PATH
 ```
 
 ## Usage
