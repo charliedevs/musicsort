@@ -42,7 +42,7 @@ func main() {
 	var wg sync.WaitGroup
 	filesToProcess := make(chan string, 100)
 
-	// Start workers
+	// Start worker pool (20 goroutines)
 	for i := 0; i < 20; i++ {
 		wg.Add(1)
 		go func() {
@@ -53,6 +53,7 @@ func main() {
 		}()
 	}
 
+	// Walk source directory to find music files
 	err := filepath.WalkDir(sourceDir, func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -77,7 +78,7 @@ func main() {
 	close(filesToProcess)
 	wg.Wait()
 
-	fmt.Println("Cleaning up any empty source directories...")
+	// Handle cleanup
 	removeEmptyDirs(sourceDir)
 
 	fmt.Println("Done!")
@@ -90,7 +91,6 @@ func sanitize(s string) string {
 func processFile(path string) {
 	artist, album, title, year, err := readTags(path)
 	if err != nil {
-		// Log error but continue to next file
 		log.Printf("Error reading tags for %s: %v", path, err)
 		return
 	}
@@ -109,11 +109,13 @@ func processFile(path string) {
 		return
 	}
 
+	// Ensure destination exists
 	if err := os.MkdirAll(destDir, 0755); err != nil {
 		log.Printf("Error creating directory %s: %v", destDir, err)
 		return
 	}
 
+	// Check if file already exists at destination
 	if _, err := os.Stat(destPath); err == nil {
 		fmt.Printf("\033[0;33m[SKIP]\033[0m %s already exists\n", newFilename)
 		return
@@ -125,7 +127,7 @@ func processFile(path string) {
 	}
 }
 
-// readTags extracts metadata and closes the file immediately
+// readTags handles file opening and metadata extraction
 func readTags(path string) (artist, album, title, year string, err error) {
 	f, err := os.Open(path)
 	if err != nil {
@@ -143,7 +145,7 @@ func readTags(path string) (artist, album, title, year string, err error) {
 		}
 	}
 
-	// Fallbacks
+	// Default fallbacks for missing tags
 	if artist == "" {
 		artist = "Unknown Artist"
 	}
@@ -157,14 +159,14 @@ func readTags(path string) (artist, album, title, year string, err error) {
 	return artist, album, title, year, nil
 }
 
-// moveFile attempts a rename, but falls back to copy/delete for cross-device moves
+// moveFile supports cross-device moves by falling back to copy+delete
 func moveFile(src, dst string) error {
 	err := os.Rename(src, dst)
 	if err == nil {
 		return nil
 	}
 
-	// If rename failed, try manual copy (standard for cross-partition moves)
+	// Standard fallback for "invalid cross-device link" errors
 	sourceFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -181,7 +183,6 @@ func moveFile(src, dst string) error {
 		return err
 	}
 
-	// Close files before removing source
 	sourceFile.Close()
 	return os.Remove(src)
 }
@@ -195,20 +196,24 @@ func removeEmptyDirs(root string) {
 		return nil
 	})
 
-	// Sort deepest first
+	// Sort by path length descending (bottom-up cleanup)
 	sort.Slice(dirs, func(i, j int) bool {
 		return len(dirs[i]) > len(dirs[j])
 	})
 
 	for _, dir := range dirs {
 		if dryRun {
-			entries, _ := os.ReadDir(dir)
-			if len(entries) == 0 {
+			// Check if directory is empty to report accurately in dry run
+			entries, err := os.ReadDir(dir)
+			if err == nil && len(entries) == 0 {
 				fmt.Printf("[DRY-RUN] Would remove empty folder: %s\n", dir)
 			}
 			continue
 		}
-		// Silently ignore errors (dir might not be empty)
-		_ = os.Remove(dir)
+
+		// os.Remove only succeeds if the directory is empty
+		if err := os.Remove(dir); err == nil {
+			fmt.Printf("\033[0;31m[REMOVE]\033[0m %s\n", dir)
+		}
 	}
 }
