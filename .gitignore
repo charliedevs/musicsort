@@ -1,0 +1,24 @@
+# Binaries
+/musicsort
+/spotifym3u
+*.test
+
+# Test coverage
+coverage.out
+*.coverprofile
+
+# IDE and editor directories
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Build directories
+dist/
+build/
+
+# Go modules
+vendor/
