@@ -28,15 +28,17 @@ CLI tools for organizing music files and creating M3U playlists from Exportify C
 
 ## TODO
 
+- [ ] Bug: spotifym3u adds source's parent folder to target directory
 - [ ] Maybe actually make the interface and output for both tools consistent with each other
   - [ ] flags should be similar (maybe short versions like music sort with optional long flags that look like spotofym3u)
   - [ ] spotifym3u needs some progress feedback when running (currently no output until finished)
   - [ ] maybe verbose output for each looks like musicsort, but default is running progress info on single line?
   - [ ] musicsort needs final results
 - [ ] Custom organization/directory naming for musicsort
+  - [ ] Track number in the track filename by default would be good
 - [ ] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
   - [ ] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
-  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't
+  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't (or "limited edition" in one and not the other)
 - [ ] Add release
 
 ## CLI Tools
