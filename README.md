@@ -1,11 +1,43 @@
-# musicsort
+# musicsort <!-- omit from toc -->
 
 CLI tools for organizing music files and creating M3U playlists from Exportify CSV exports.
+
+- [TODO](#todo)
+- [CLI Tools](#cli-tools)
+  - [musicsort](#musicsort)
+  - [spotifym3u](#spotifym3u)
+- [Installation](#installation)
+- [Workflow](#workflow)
+  - [Step-by-Step Guide](#step-by-step-guide)
+    - [1. Export Playlists from Spotify](#1-export-playlists-from-spotify)
+    - [2. Use sldl to get music files](#2-use-sldl-to-get-music-files)
+    - [3. Organize Your Music Library](#3-organize-your-music-library)
+    - [4. Create M3U Playlists](#4-create-m3u-playlists)
+    - [5. (Optional) Transfer to Portable Device](#5-optional-transfer-to-portable-device)
+- [Usage](#usage)
+- [Development](#development)
+  - [Project Structure](#project-structure)
+  - [Makefile Targets](#makefile-targets)
+  - [Contributing](#contributing)
+- [Supported Audio Formats](#supported-audio-formats)
+- [How It Works](#how-it-works)
+- [Dependencies](#dependencies)
+- [Related Tools](#related-tools)
+- [Troubleshooting](#troubleshooting)
+
 
 ## TODO
 
 - [ ] Maybe actually make the interface and output for both tools consistent with each other
+  - [ ] flags should be similar (maybe short versions like music sort with optional long flags that look like spotofym3u)
+  - [ ] spotifym3u needs some progress feedback when running (currently no output until finished)
+  - [ ] maybe verbose output for each looks like musicsort, but default is running progress info on single line?
+  - [ ] musicsort needs final results
 - [ ] Custom organization/directory naming for musicsort
+- [ ] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
+  - [ ] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
+  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't
+- [ ] Add release
 
 ## CLI Tools
 
@@ -29,19 +61,19 @@ Creates a m3u playlist file based on Exportify CSV file and your organized music
 
 ## Installation
 
-### Quick Install (Linux/macOS)
+### Quick Install (Linux/macOS) <!-- omit from toc -->
 
 Ensure [Go 1.20+](https://go.dev/doc/install) is installed, then:
 
 ```bash
-git clone https://github.com/yourusername/musicsort.git
+git clone https://github.com/charliedevs/musicsort.git
 cd musicsort
 make install
 ```
 
 This builds and installs both `musicsort` and `spotifym3u` to `~/.local/bin/`.
 
-### Build Individual Tools
+### Build Individual Tools <!-- omit from toc -->
 
 musicsort only:
 
@@ -55,7 +87,7 @@ spotifym3u only:
 make build-spotifym3u
 ```
 
-### Build Both
+### Build Both <!-- omit from toc -->
 
 ```bash
 make build
@@ -154,7 +186,7 @@ Load the M3U in a music player to play from the organized library.
 
 ## Usage
 
-### musicsort
+### musicsort <!-- omit from toc -->
 
 Organize music files by metadata into an `Artist/Album (Year)/` hierarchy.
 
@@ -169,7 +201,7 @@ musicsort [OPTIONS]
 | -r   | Enable recursive search                  | false   |
 | -n   | Dry run (preview changes without moving) | false   |
 
-#### Examples
+#### Examples <!-- omit from toc -->
 
 Organize a downloads folder into a music library recursively:
 
@@ -183,7 +215,7 @@ Preview changes without moving files:
 musicsort -s ~/Downloads -t ~/Music -r -n
 ```
 
-### spotifym3u
+### spotifym3u <!-- omit from toc -->
 
 Create an M3U playlist from a Exportify CSV export.
 
@@ -201,7 +233,7 @@ spotifym3u -csv PLAYLIST.csv -source ~/Music -output playlist.m3u
 | -dry-run       | Show match results without writing file  | false        |
 | -debug         | Print unmatched track details            | false        |
 
-#### Examples
+#### Examples <!-- omit from toc -->
 
 Create a playlist for a mobile device with a custom prefix:
 
@@ -254,6 +286,14 @@ make lint               # Run formatters and linters
 make clean              # Remove built binaries
 ```
 
+### Contributing
+
+1. Fork the repo
+2. Create a feature branch
+3. Write tests
+4. Run `make test` and `make fmt`
+5. Submit a PR
+
 ## Supported Audio Formats
 
 Both tools support the following audio formats:
@@ -268,7 +308,7 @@ Both tools support the following audio formats:
 
 ## How It Works
 
-### musicsort
+### musicsort <!-- omit from toc -->
 
 1. Scans source directory for audio files
 2. Reads metadata tags (artist, album, title, year)
@@ -297,7 +337,7 @@ After:
           └── Artist B - Song 3.flac
 ```
 
-### spotifym3u
+### spotifym3u <!-- omit from toc -->
 
 1. Parses Spotify/Exportify CSV
 2. Indexes local audio files with normalized metadata
@@ -330,44 +370,30 @@ Designed to work with:
 - [Exportify](https://github.com/watsonbox/exportify) - Export Spotify playlists to CSV
 - [sldl](https://github.com/fiso64/sldl) - Download from Soulseek
 
-Workflow: Exportify → sldl → musicsort → spotifym3u
-
-## License
-
-MIT (or specify your license)
-
-## Contributing
-
-1. Fork the repo
-2. Create a feature branch
-3. Write tests
-4. Run `make test` and `make fmt`
-5. Submit a PR
-
 ## Troubleshooting
 
-### musicsort doesn't move files
+### musicsort doesn't move files <!-- omit from toc -->
 
 - Check directory permissions
 - Use `-n` flag to preview changes
 - Verify files have readable metadata tags
 - Try without `-r` for top-level scan only
 
-### spotifym3u reports missing tracks
+### spotifym3u reports missing tracks <!-- omit from toc -->
 
 - Ensure filenames match metadata
 - Use `-debug` flag to see unmatched tracks
 - Use `-recursive` flag if music is in subdirectories
 - Check CSV has required columns
 
-### Permission denied when installing
+### Permission denied when installing <!-- omit from toc -->
 
 ```bash
 make install # installs to ~/.local/bin/
 cp musicsort ~/.local/bin  # or manually
 ```
 
-### Command Not Found
+### Command Not Found <!-- omit from toc -->
 
 Ensure the files are in your `PATH`.
 
