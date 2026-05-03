@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 
+	"musicsort/internal/flaghelp"
 	"musicsort/internal/musicsort"
 )
 
@@ -13,14 +14,24 @@ const version = "1.0.0"
 
 func main() {
 	cfg := musicsort.Config{}
-	flag.StringVar(&cfg.SourceDir, "s", ".", "Source directory to scan")
-	flag.StringVar(&cfg.TargetDir, "t", ".", "Target directory for organized files")
-	flag.BoolVar(&cfg.Recursive, "r", false, "Enable recursive search")
-	flag.BoolVar(&cfg.DryRun, "n", false, "Dry run (preview changes without moving)")
-	vers := flag.Bool("version", false, "Print version and exit")
+	flaghelp.StringVar(&cfg.SourceDir, ".", "Source directory to scan", "-s", "--source")
+	flaghelp.StringVar(&cfg.TargetDir, ".", "Target directory for organized files", "-t", "--target")
+	flaghelp.BoolVar(&cfg.Recursive, false, "Enable recursive search", "-r", "--recursive")
+	flaghelp.BoolVar(&cfg.DryRun, false, "Dry run (preview changes without moving)", "-n", "--dry-run")
+	flaghelp.BoolVar(&cfg.Verbose, false, "Verbose output", "-v", "--verbose")
+	help := false
+	flaghelp.BoolVar(&help, false, "Show help", "-h", "--help")
+	vers := false
+	flaghelp.BoolVar(&vers, false, "Print version and exit", "--version")
+
+	flag.Usage = flaghelp.Usage
 	flag.Parse()
 
-	if *vers {
+	if help {
+		flag.Usage()
+		os.Exit(0)
+	}
+	if vers {
 		fmt.Printf("musicsort version %s\n", version)
 		os.Exit(0)
 	}

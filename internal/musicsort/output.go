@@ -1,23 +1,33 @@
 package musicsort
 
-import "fmt"
+import "musicsort/internal/clioutput"
 
 // PrintDryRunWarning prints a warning that the operation is in dry-run mode.
 func PrintDryRunWarning() {
-	fmt.Println("\033[1;33m[DRY RUN] No files will actually be moved.\033[0m")
+	clioutput.InfoLine("%s No files will actually be moved.", clioutput.Label("DRY RUN", clioutput.Yellow))
 }
 
 // PrintMove prints a message indicating a file was successfully moved.
 func PrintMove(filename string) {
-	fmt.Printf("\033[0;32m[MOVE]\033[0m %s\n", filename)
+	clioutput.InfoLine("%s %s", clioutput.Label("MOVE", clioutput.Green), filename)
 }
 
 // PrintSkip prints a message indicating a file was skipped.
 func PrintSkip(filename string, reason string) {
-	fmt.Printf("\033[0;33m[SKIP]\033[0m %s (%s)\n", filename, reason)
+	clioutput.InfoLine("%s %s (%s)", clioutput.Label("SKIP", clioutput.Yellow), filename, reason)
 }
 
-// PrintDone prints a completion message.
-func PrintDone() {
-	fmt.Println("Done!")
+// PrintSummary prints a colored summary of the organization operation.
+func PrintSummary(result Result, dryRun bool) {
+	clioutput.Newline()
+	clioutput.SummaryHeader("Summary")
+	clioutput.SummaryItem("Total:", result.Total)
+	clioutput.SummaryStatus("Moved:", result.Moved, clioutput.Green)
+	clioutput.SummaryStatus("Skipped:", result.Skipped, clioutput.Yellow)
+	clioutput.SummaryStatus("Errors:", result.Errors, clioutput.Red)
+	if dryRun {
+		clioutput.SummaryItem("Status:", "dry run (no files were moved)")
+	} else {
+		clioutput.SummaryItem("Status:", "completed successfully")
+	}
 }

@@ -7,18 +7,11 @@ import (
 	"path/filepath"
 	"strings"
 
+	"musicsort/internal/audio"
+	"musicsort/internal/clioutput"
+
 	"github.com/dhowden/tag"
 )
-
-var supportedExtensions = map[string]bool{
-	".mp3":  true,
-	".m4a":  true,
-	".flac": true,
-	".ogg":  true,
-	".opus": true,
-	".wav":  true,
-	".aac":  true,
-}
 
 type localTrack struct {
 	Path         string
@@ -40,7 +33,7 @@ type TrackIndex struct {
 	allTracks   []*localTrack
 }
 
-func BuildIndex(rootDir string, recursive bool) (*TrackIndex, error) {
+func BuildIndex(rootDir string, recursive, verbose bool) (*TrackIndex, error) {
 	index := &TrackIndex{
 		rootDir:     rootDir,
 		exactMatch:  make(map[string][]*localTrack),
@@ -48,6 +41,7 @@ func BuildIndex(rootDir string, recursive bool) (*TrackIndex, error) {
 		titleOnly:   make(map[string][]*localTrack),
 	}
 
+	processed := 0
 	walkFn := func(path string, d fs.DirEntry, err error) error {
 		if err != nil {
 			return err
@@ -60,13 +54,21 @@ func BuildIndex(rootDir string, recursive bool) (*TrackIndex, error) {
 		}
 
 		ext := strings.ToLower(filepath.Ext(path))
-		if !supportedExtensions[ext] {
+		if !audio.SupportedExtensions[ext] {
 			return nil
 		}
 
 		track, err := buildTrack(rootDir, path)
 		if err != nil {
 			return nil
+		}
+
+		processed++
+		if verbose {
+			rel, _ := filepath.Rel(rootDir, path)
+			clioutput.InfoLine("%s %s", clioutput.Label("INDEX", clioutput.Cyan), filepath.ToSlash(rel))
+		} else {
+			clioutput.ProgressLine("Indexing %d files...", processed)
 		}
 
 		index.allTracks = append(index.allTracks, track)
@@ -78,6 +80,14 @@ func BuildIndex(rootDir string, recursive bool) (*TrackIndex, error) {
 
 	if err := filepath.WalkDir(rootDir, walkFn); err != nil {
 		return nil, fmt.Errorf("walk source directory: %w", err)
+	}
+
+	if !verbose {
+		fmt.Println()
+	}
+
+	if verbose {
+		clioutput.InfoLine("Indexed %d tracks", processed)
 	}
 
 	return index, nil

@@ -11,6 +11,7 @@ type Config struct {
 	TargetDir string
 	Recursive bool
 	DryRun    bool
+	Verbose   bool
 }
 
 // Validate checks that the configuration is valid.

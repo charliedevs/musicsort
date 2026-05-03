@@ -136,3 +136,35 @@ func TestMoveFileDryRun(t *testing.T) {
 		t.Fatalf("Destination file was created in dry-run mode")
 	}
 }
+
+func TestRemoveEmptyDirs(t *testing.T) {
+	tmpDir := t.TempDir()
+	emptyDir := filepath.Join(tmpDir, "a", "b")
+	if err := os.MkdirAll(emptyDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	filledDir := filepath.Join(tmpDir, "c")
+	if err := os.MkdirAll(filledDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.WriteFile(filepath.Join(filledDir, "file.txt"), []byte("data"), 0644); err != nil {
+		t.Fatal(err)
+	}
+
+	RemoveEmptyDirs(tmpDir, false, false)
+	if FileExists(emptyDir) {
+		t.Fatalf("expected empty directory %q to be removed", emptyDir)
+	}
+	if !FileExists(filledDir) {
+		t.Fatalf("expected non-empty directory %q to remain", filledDir)
+	}
+
+	// Dry-run should leave directories intact
+	if err := os.MkdirAll(emptyDir, 0755); err != nil {
+		t.Fatal(err)
+	}
+	RemoveEmptyDirs(tmpDir, true, false)
+	if !FileExists(emptyDir) {
+		t.Fatalf("expected empty directory %q to remain in dry-run mode", emptyDir)
+	}
+}

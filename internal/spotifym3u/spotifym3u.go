@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"path/filepath"
 	"strings"
+
+	"musicsort/internal/clioutput"
 )
 
 type Config struct {
@@ -13,6 +15,7 @@ type Config struct {
 	TargetPrefix string
 	Recursive    bool
 	DryRun       bool
+	Verbose      bool
 	Debug        bool
 }
 
@@ -39,12 +42,12 @@ func Run(cfg Config) error {
 		return fmt.Errorf("parse csv: %w", err)
 	}
 
-	index, err := BuildIndex(absSource, cfg.Recursive)
+	index, err := BuildIndex(absSource, cfg.Recursive, cfg.Verbose)
 	if err != nil {
 		return fmt.Errorf("build source index: %w", err)
 	}
 
-	result := index.MatchPlaylist(rows)
+	result := index.MatchPlaylist(rows, cfg.Verbose)
 
 	if !cfg.DryRun {
 		if err := WritePlaylist(cfg.OutputPath, cfg.TargetPrefix, result.Matches); err != nil {
@@ -52,6 +55,9 @@ func Run(cfg Config) error {
 		}
 	}
 
+	if cfg.Verbose {
+		clioutput.Newline()
+	}
 	PrintSummary(cfg.OutputPath, cfg.TargetPrefix, result, cfg.DryRun, cfg.Debug)
 	return nil
 }

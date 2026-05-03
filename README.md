@@ -2,12 +2,12 @@
 
 CLI tools for organizing music files and creating M3U playlists from Exportify CSV exports.
 
-- [TODO](#todo)
 - [CLI Tools](#cli-tools)
   - [musicsort](#musicsort)
   - [spotifym3u](#spotifym3u)
+- [TODO](#todo)
 - [Installation](#installation)
-- [Workflow](#workflow)
+- [My Workflow](#my-workflow)
   - [Step-by-Step Guide](#step-by-step-guide)
     - [1. Export Playlists from Spotify](#1-export-playlists-from-spotify)
     - [2. Use sldl to get music files](#2-use-sldl-to-get-music-files)
@@ -24,22 +24,6 @@ CLI tools for organizing music files and creating M3U playlists from Exportify C
 - [Dependencies](#dependencies)
 - [Related Tools](#related-tools)
 - [Troubleshooting](#troubleshooting)
-
-
-## TODO
-
-- [ ] Bug: spotifym3u adds source's parent folder to target directory
-- [ ] Maybe actually make the interface and output for both tools consistent with each other
-  - [ ] flags should be similar (maybe short versions like music sort with optional long flags that look like spotofym3u)
-  - [ ] spotifym3u needs some progress feedback when running (currently no output until finished)
-  - [ ] maybe verbose output for each looks like musicsort, but default is running progress info on single line?
-  - [ ] musicsort needs final results
-- [ ] Custom organization/directory naming for musicsort
-  - [ ] Track number in the track filename by default would be good
-- [ ] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
-  - [ ] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
-  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't (or "limited edition" in one and not the other)
-- [ ] Add release
 
 ## CLI Tools
 
@@ -60,6 +44,20 @@ Creates a m3u playlist file based on Exportify CSV file and your organized music
 - Reads Exportify CSV and creates M3U playlists
 - Handles incomplete or variant metadata
 - Configurable path prefixes for different devices
+
+## TODO
+
+- [x] Maybe actually make the interface and output for both tools consistent with each other
+  - [x] flags should be similar (maybe short versions like music sort with optional long flags that look like spotifym3u)
+  - [x] spotifym3u needs some progress feedback when running (currently no output until finished)
+  - [x] maybe verbose output for each looks like musicsort, but default is running progress info on single line?
+  - [x] musicsort needs final results
+- [ ] Custom organization/directory naming for musicsort
+  - [ ] Track number in the track filename by default would be good
+- [ ] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
+  - [ ] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
+  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't (or "limited edition" in one and not the other)
+- [ ] Add release
 
 ## Installation
 
@@ -97,7 +95,7 @@ make build
 
 Binaries will be created in the current directory.
 
-## Workflow
+## My Workflow
 
 Below is the process I follow to get my spotify playlists onto my portable audio player. Feel free to try something similar.
 
@@ -159,7 +157,7 @@ This command:
 Use spotifym3u to create M3U playlist files that reference your organized music:
 
 ```bash
-spotifym3u -csv MyPlaylist.csv -source ~/Music -output MyPlaylist.m3u -target-prefix "mnt/SDCARD/Music" -recursive
+spotifym3u -csv MyPlaylist.csv --source ~/Music --output MyPlaylist.m3u --target-prefix "mnt/SDCARD/Music" --recursive
 ```
 
 > **Note:** Make sure `-target-prefix` matches the location where you'll place the music files.
@@ -196,12 +194,14 @@ Organize music files by metadata into an `Artist/Album (Year)/` hierarchy.
 musicsort [OPTIONS]
 ```
 
-| Flag | Description                              | Default |
-| :--- | :--------------------------------------- | :------ |
-| -s   | Source directory to scan                 | .       |
-| -t   | Target directory for organized files     | .       |
-| -r   | Enable recursive search                  | false   |
-| -n   | Dry run (preview changes without moving) | false   |
+| Flag            | Description                              | Default |
+| :-------------- | :--------------------------------------- | :------ |
+| -s, --source    | Source directory to scan                 | .       |
+| -t, --target    | Target directory for organized files     | .       |
+| -r, --recursive | Enable recursive search                  | false   |
+| -n, --dry-run   | Dry run (preview changes without moving) | false   |
+| -v, --verbose   | Verbose output with per-file status      | false   |
+| -h, --help      | Show usage                               |         |
 
 #### Examples <!-- omit from toc -->
 
@@ -217,6 +217,12 @@ Preview changes without moving files:
 musicsort -s ~/Downloads -t ~/Music -r -n
 ```
 
+Verbose output:
+
+```bash
+musicsort -s ~/Downloads -t ~/Music -r -v
+```
+
 ### spotifym3u <!-- omit from toc -->
 
 Create an M3U playlist from a Exportify CSV export.
@@ -225,15 +231,17 @@ Create an M3U playlist from a Exportify CSV export.
 spotifym3u -csv PLAYLIST.csv -source ~/Music -output playlist.m3u
 ```
 
-| Flag           | Description                              | Default      |
-| :------------- | :--------------------------------------- | :----------- |
-| -csv           | Path to the Exportify CSV file           | required     |
-| -source        | Source directory containing music files  | .            |
-| -output        | Output M3U playlist file                 | playlist.m3u |
-| -target-prefix | Prefix to prepend to each playlist entry | (none)       |
-| -recursive     | Scan source directory recursively        | false        |
-| -dry-run       | Show match results without writing file  | false        |
-| -debug         | Print unmatched track details            | false        |
+| Flag                | Description                              | Default      |
+| :------------------ | :--------------------------------------- | :----------- |
+| -c, --csv           | Path to the Exportify CSV file           | required     |
+| -s, --source        | Source directory containing music files  | .            |
+| -o, --output        | Output M3U playlist file                 | playlist.m3u |
+| -p, --target-prefix | Prefix to prepend to each playlist entry | (none)       |
+| -r, --recursive     | Scan source directory recursively        | false        |
+| -n, --dry-run       | Show match results without writing file  | false        |
+| -v, --verbose       | Verbose output with per-entry status     | false        |
+| -h, --help          | Show usage                               | false        |
+| --debug             | Print unmatched track details            | false        |
 
 #### Examples <!-- omit from toc -->
 
@@ -253,6 +261,12 @@ Export unmatched tracks to debug missing songs:
 
 ```bash
 spotifym3u -csv MyPlaylist.csv -source ~/Music -debug
+```
+
+Verbose matching output:
+
+```bash
+spotifym3u -csv MyPlaylist.csv -source ~/Music -output Mobile.m3u -recursive -v
 ```
 
 ## Development
@@ -367,7 +381,7 @@ Result: ✓ Matched (exact: title+artist+album)
 
 ## Related Tools
 
-Designed to work with:
+This project is unaffiliated but designed to work with:
 
 - [Exportify](https://github.com/watsonbox/exportify) - Export Spotify playlists to CSV
 - [sldl](https://github.com/fiso64/sldl) - Download from Soulseek
@@ -384,8 +398,8 @@ Designed to work with:
 ### spotifym3u reports missing tracks <!-- omit from toc -->
 
 - Ensure filenames match metadata
-- Use `-debug` flag to see unmatched tracks
-- Use `-recursive` flag if music is in subdirectories
+- Use `--debug` flag to see unmatched tracks
+- Use `--recursive` flag if music is in subdirectories
 - Check CSV has required columns
 
 ### Permission denied when installing <!-- omit from toc -->

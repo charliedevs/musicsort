@@ -1,6 +1,11 @@
 package spotifym3u
 
-import "strings"
+import (
+	"fmt"
+	"strings"
+
+	"musicsort/internal/clioutput"
+)
 
 type MatchResult struct {
 	Request   PlaylistEntry
@@ -16,20 +21,33 @@ type MatchSummary struct {
 	Unmatched []PlaylistEntry
 }
 
-func (index *TrackIndex) MatchPlaylist(entries []PlaylistEntry) MatchSummary {
+func (index *TrackIndex) MatchPlaylist(entries []PlaylistEntry, verbose bool) MatchSummary {
 	var summary MatchSummary
 	summary.Total = len(entries)
 
-	for _, entry := range entries {
+	for i, entry := range entries {
 		match, reason := index.findBestMatch(entry)
 		if match != nil {
 			summary.Matched++
 			summary.Matches = append(summary.Matches, MatchResult{Request: entry, Candidate: match, Reason: reason})
+			if verbose {
+				clioutput.InfoLine("%s %d/%d %s -> %s (%s)", clioutput.Label("MATCH", clioutput.Green), i+1, summary.Total, entry.TrackName, match.Path, reason)
+			} else {
+				clioutput.ProgressLine("Matching %d/%d entries...", i+1, summary.Total)
+			}
 			continue
 		}
 
 		summary.Missing++
 		summary.Unmatched = append(summary.Unmatched, entry)
+		if verbose {
+			clioutput.InfoLine("%s %d/%d %s (%s)", clioutput.Label("MISS", clioutput.Red), i+1, summary.Total, entry.TrackName, reason)
+		} else {
+			clioutput.ProgressLine("Matching %d/%d entries...", i+1, summary.Total)
+		}
+	}
+	if !verbose {
+		fmt.Println()
 	}
 
 	return summary

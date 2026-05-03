@@ -38,7 +38,7 @@ func TestBuildIndexAndMatch(t *testing.T) {
 	index.titleOnly[track.NormTitle] = []*localTrack{track}
 
 	entries := []PlaylistEntry{{TrackName: "Song", Artist: "Some Artist", Album: "Album Name", Duration: 213}}
-	result := index.MatchPlaylist(entries)
+	result := index.MatchPlaylist(entries, false)
 	if result.Matched != 1 {
 		t.Fatalf("expected 1 match, got %d", result.Matched)
 	}

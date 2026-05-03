@@ -5,6 +5,8 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+
+	"musicsort/internal/clioutput"
 )
 
 func WritePlaylist(outputPath, targetPrefix string, matches []MatchResult) error {
@@ -39,21 +41,32 @@ func WritePlaylist(outputPath, targetPrefix string, matches []MatchResult) error
 }
 
 func PrintSummary(outputPath, targetPrefix string, summary MatchSummary, dryRun, debug bool) {
-	fmt.Printf("Processed %d playlist entries\n", summary.Total)
-	fmt.Printf("Matched %d entries\n", summary.Matched)
-	fmt.Printf("Missing %d entries\n", summary.Missing)
+	matchedLabel := "Matched:"
+	missingLabel := "Missing:"
 	if dryRun {
-		fmt.Printf("Dry run: playlist file was not written\n")
+		matchedLabel = "Would match:"
+		missingLabel = "Would be missing:"
+	}
+
+	clioutput.SummaryHeader("Summary")
+	clioutput.SummaryItem("Processed:", summary.Total)
+	clioutput.SummaryStatus(matchedLabel, summary.Matched, clioutput.Green)
+	clioutput.SummaryStatus(missingLabel, summary.Missing, clioutput.Red)
+	if dryRun {
+		clioutput.SummaryItem("Result:", "dry run (playlist file was not written)")
+		clioutput.SummaryItem("Playlist:", outputPath)
 	} else {
-		fmt.Printf("Playlist written to %s\n", outputPath)
+		clioutput.SummaryItem("Result:", "completed successfully")
+		clioutput.SummaryItem("Playlist:", outputPath)
 		if targetPrefix != "" {
-			fmt.Printf("Target prefix: %s\n", targetPrefix)
+			clioutput.SummaryItem("Target prefix:", targetPrefix)
 		}
 	}
 	if debug && summary.Missing > 0 {
-		fmt.Println("\nUnmatched tracks:")
+		clioutput.Newline()
+		clioutput.InfoLine("Unmatched tracks:")
 		for _, entry := range summary.Unmatched {
-			fmt.Printf("- %s | %s | %s\n", entry.TrackName, entry.Artist, entry.Album)
+			clioutput.InfoLine("- %s | %s | %s", entry.TrackName, entry.Artist, entry.Album)
 		}
 	}
 }

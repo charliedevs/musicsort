@@ -55,7 +55,7 @@ func MoveFile(src, dst string, dryRun bool) error {
 
 // RemoveEmptyDirs removes all empty directories under root, walking bottom-up.
 // It silently ignores non-empty directories and errors.
-func RemoveEmptyDirs(root string, dryRun bool) {
+func RemoveEmptyDirs(root string, dryRun, verbose bool) {
 	var dirs []string
 	filepath.WalkDir(root, func(path string, d fs.DirEntry, err error) error {
 		if err == nil && d.IsDir() && path != root {
@@ -70,18 +70,25 @@ func RemoveEmptyDirs(root string, dryRun bool) {
 	})
 
 	for _, dir := range dirs {
+		entries, err := os.ReadDir(dir)
+		if err != nil {
+			continue
+		}
+		if len(entries) != 0 {
+			continue
+		}
+
 		if dryRun {
-			// Check if directory is empty to report accurately in dry run
-			entries, err := os.ReadDir(dir)
-			if err == nil && len(entries) == 0 {
+			if verbose {
 				fmt.Printf("[DRY-RUN] Would remove empty folder: %s\n", dir)
 			}
 			continue
 		}
 
-		// os.Remove only succeeds if the directory is empty
 		if err := os.Remove(dir); err == nil {
-			fmt.Printf("\033[0;31m[REMOVE]\033[0m %s\n", dir)
+			if verbose {
+				fmt.Printf("\033[0;31m[REMOVE]\033[0m %s\n", dir)
+			}
 		}
 	}
 }
