@@ -34,7 +34,9 @@ Takes music files in directory and organizes into folders.
 - Concurrent processing with Go routines
 - Native metadata parsing without external dependencies
 - Dry-run and safe-skip modes to prevent data loss
-- Places into `Artist/Album (Year)/` directory structure
+- Configurable layout presets (Artist/Album, Genre/Artist/Album, flat, etc.)
+- Track-number prefix in filenames by default (multi-disc aware)
+- Auto-consolidates pre-existing case-fold and edition-variant duplicate folders
 
 ### spotifym3u
 
@@ -52,11 +54,11 @@ Creates a m3u playlist file based on Exportify CSV file and your organized music
   - [x] spotifym3u needs some progress feedback when running (currently no output until finished)
   - [x] maybe verbose output for each looks like musicsort, but default is running progress info on single line?
   - [x] musicsort needs final results
-- [ ] Custom organization/directory naming for musicsort
-  - [ ] Track number in the track filename by default would be good
-- [ ] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
-  - [ ] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
-  - [ ] album folder dupes - some duplicates created where one track has release year and one doesn't (or "limited edition" in one and not the other)
+- [x] Custom organization/directory naming for musicsort (`--layout`)
+  - [x] Track number in the track filename by default would be good (`--no-track-numbers` to opt out)
+- [x] better musicsort matching (case insensitivity - multiple of the same artist folders with inconsistent casing)
+  - [x] case insensitivity - multiple of the same artist folders currently created with inconsistent casing
+  - [x] album folder dupes - some duplicates created where one track has release year and one doesn't (or "limited edition" in one and not the other)
 - [ ] Add release
 
 ## Installation
@@ -188,20 +190,38 @@ Load the M3U in a music player to play from the organized library.
 
 ### musicsort <!-- omit from toc -->
 
-Organize music files by metadata into an `Artist/Album (Year)/` hierarchy.
+Organize music files by metadata into a configurable directory hierarchy
+(default `Artist/Album (Year)/`).
 
 ```bash
 musicsort [OPTIONS]
 ```
 
-| Flag            | Description                              | Default |
-| :-------------- | :--------------------------------------- | :------ |
-| -s, --source    | Source directory to scan                 | .       |
-| -t, --target    | Target directory for organized files     | .       |
-| -r, --recursive | Enable recursive search                  | false   |
-| -n, --dry-run   | Dry run (preview changes without moving) | false   |
-| -v, --verbose   | Verbose output with per-file status      | false   |
-| -h, --help      | Show usage                               |         |
+| Flag                | Description                                                         | Default           |
+| :------------------ | :------------------------------------------------------------------ | :---------------- |
+| -s, --source        | Source directory to scan                                            | .                 |
+| -t, --target        | Target directory for organized files                                | .                 |
+| -l, --layout        | Layout preset (see below)                                           | artist-album-year |
+| -r, --recursive     | Enable recursive search                                             | false             |
+| -n, --dry-run       | Dry run (preview changes without moving)                            | false             |
+| -v, --verbose       | Verbose output with per-file status                                 | false             |
+| --no-track-numbers  | Do NOT prefix track numbers on filenames                            | false             |
+| --no-consolidate    | Skip consolidating existing case/edition-variant duplicate folders  | false             |
+| -h, --help          | Show usage                                                          |                   |
+
+#### Layout presets <!-- omit from toc -->
+
+| Preset                    | Result                                                |
+| :------------------------ | :---------------------------------------------------- |
+| `artist-album-year`       | `Artist/Album (Year)/Artist - Title.ext` (default)    |
+| `artist-album`            | `Artist/Album/Artist - Title.ext` (no year suffix)    |
+| `albumartist-album-year`  | `AlbumArtist/Album (Year)/...` (compilation-friendly) |
+| `flat`                    | Single directory; filename is `Artist - Album - Title.ext` |
+| `genre-artist-album-year` | `Genre/Artist/Album (Year)/...`                       |
+
+When track numbers are enabled (default), filenames are prefixed with
+`NN - ` (zero-padded). For multi-disc releases the prefix becomes
+`D-NN - ` (e.g. `2-05 - Tonight, Tonight.mp3`).
 
 #### Examples <!-- omit from toc -->
 
@@ -221,6 +241,19 @@ Verbose output:
 
 ```bash
 musicsort -s ~/Downloads -t ~/Music -r -v
+```
+
+Genre-first layout without track-number prefixes:
+
+```bash
+musicsort -s ~/Downloads -t ~/Music -r -l genre-artist-album-year --no-track-numbers
+```
+
+Skip consolidating pre-existing case/edition-variant folder duplicates
+(useful if you want to leave an existing mixed library untouched):
+
+```bash
+musicsort -s ~/Downloads -t ~/Music -r --no-consolidate
 ```
 
 ### spotifym3u <!-- omit from toc -->
@@ -327,31 +360,40 @@ Both tools support the following audio formats:
 ### musicsort <!-- omit from toc -->
 
 1. Scans source directory for audio files
-2. Reads metadata tags (artist, album, title, year)
-3. Creates sanitized directory structure: `Artist/Album (Year)/`
-4. Moves files to match structure
-5. Removes empty directories
-6. Prints status with color codes
+2. Reads metadata tags (artist, album, title, year, track number, disc number, genre)
+3. Pre-scans the target directory and consolidates existing case-fold or
+   edition-variant duplicate folders into a canonical winner
+4. Resolves each new file's destination through the active layout preset,
+   reusing existing folder casing when one is already present
+5. Moves files to match structure (track-number-prefixed filenames by default)
+6. Removes empty directories
+7. Prints status with color codes
 
 **Example transformation:**
 
 ```
 Before:
   Downloads/
-  ├── song1.mp3
-  ├── song2.mp3
-  └── song3.flac
+  ├── song1.mp3        (Artist A - Album 1 - Track 1)
+  ├── song2.mp3        (Artist A - Album 1 - Track 2)
+  └── song3.flac       (Artist B - Album 2 - Track 1)
 
-After:
+After (default layout, track numbers enabled):
   Music/
   ├── Artist A/
   │   └── Album 1 (2020)/
-  │       ├── Artist A - Song 1.mp3
-  │       └── Artist A - Song 2.mp3
+  │       ├── 01 - Artist A - Song 1.mp3
+  │       └── 02 - Artist A - Song 2.mp3
   └── Artist B/
       └── Album 2 (2021)/
-          └── Artist B - Song 3.flac
+          └── 01 - Artist B - Song 3.flac
 ```
+
+Consolidation example: a target dir containing both `Mac Miller/Faces (2014)/`
+and `Mac Miller/FACES (2014)/` (a case-fold duplicate) is merged into the
+mixed-case canonical winner before the new files are organized; identical
+files are skipped, and any remaining same-name collisions are renamed
+with a ` (2)` suffix instead of being dropped.
 
 ### spotifym3u <!-- omit from toc -->
 

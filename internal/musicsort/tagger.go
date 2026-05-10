@@ -9,12 +9,20 @@ import (
 	"github.com/dhowden/tag"
 )
 
-// FileMetadata holds extracted metadata for an audio file.
+// FileMetadata holds extracted metadata for an audio file. AlbumArtist and
+// Genre are populated for layouts that need them (albumartist-album-year,
+// genre-artist-album-year). TrackNumber and Disc* are used by the
+// track-number filename prefix.
 type FileMetadata struct {
-	Artist string
-	Album  string
-	Title  string
-	Year   string
+	Artist      string
+	AlbumArtist string
+	Album       string
+	Title       string
+	Genre       string
+	Year        string
+	TrackNumber int
+	DiscNumber  int
+	DiscTotal   int
 }
 
 // ReadFileMetadata reads metadata from an audio file using the tag library.
@@ -29,15 +37,31 @@ func ReadFileMetadata(path string) (FileMetadata, error) {
 
 	m, err := tag.ReadFrom(f)
 	if err == nil {
-		// Prefer AlbumArtist if available to handle "Various Artists" or group features
+		// Prefer AlbumArtist for the primary Artist field (so the default
+		// layout's artist folder still groups compilations and feature
+		// tracks under their lead). The raw AlbumArtist is also kept so
+		// the albumartist-album-year layout can use it directly when
+		// chosen.
+		meta.AlbumArtist = m.AlbumArtist()
 		meta.Artist = m.AlbumArtist()
 		if meta.Artist == "" {
 			meta.Artist = m.Artist()
 		}
 		meta.Album = m.Album()
 		meta.Title = m.Title()
+		meta.Genre = m.Genre()
 		if y := m.Year(); y > 0 {
 			meta.Year = fmt.Sprintf(" (%d)", y)
+		}
+		// Track and Disc come back as (number, total). A zero number means
+		// the tag wasn't readable, in which case we leave the field at 0
+		// so the layout filename rule omits the prefix entirely.
+		if n, _ := m.Track(); n > 0 {
+			meta.TrackNumber = n
+		}
+		if n, total := m.Disc(); n > 0 {
+			meta.DiscNumber = n
+			meta.DiscTotal = total
 		}
 	}
 

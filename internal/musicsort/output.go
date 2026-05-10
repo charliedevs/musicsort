@@ -18,6 +18,8 @@ func PrintSkip(filename string, reason string) {
 }
 
 // PrintSummary prints a colored summary of the organization operation.
+// Consolidation counters are only surfaced when non-zero so a clean run
+// against a tidy library doesn't pad the summary with empty rows.
 func PrintSummary(result Result, dryRun bool) {
 	clioutput.Newline()
 	clioutput.SummaryHeader("Summary")
@@ -25,6 +27,12 @@ func PrintSummary(result Result, dryRun bool) {
 	clioutput.SummaryStatus("Moved:", result.Moved, clioutput.Green)
 	clioutput.SummaryStatus("Skipped:", result.Skipped, clioutput.Yellow)
 	clioutput.SummaryStatus("Errors:", result.Errors, clioutput.Red)
+	if result.Consolidated > 0 {
+		clioutput.SummaryStatus("Consolidated:", result.Consolidated, clioutput.Cyan)
+	}
+	if result.RenamedOnMerge > 0 {
+		clioutput.SummaryStatus("Renamed on merge:", result.RenamedOnMerge, clioutput.Yellow)
+	}
 	if dryRun {
 		clioutput.SummaryItem("Status:", "dry run (no files were moved)")
 	} else {
